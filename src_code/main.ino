@@ -81,14 +81,14 @@ void do_send(osjob_t *j);
 // first. When copying an EUI from ttnctl output, this means to reverse
 // the bytes. For TTN issued EUIs the last bytes should be 0xD5, 0xB3,
 // 0x70.
-static const u1_t PROGMEM APPEUI[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+static const u1_t PROGMEM APPEUI[8] = { FILLMEIN };
 
 void os_getArtEui(u1_t *buf) {
   memcpy_P(buf, APPEUI, 8);
 }
 
 // This should also be in little endian format lsb, see above.
-static const u1_t PROGMEM DEVEUI[8] = { 0xF7, 0x54, 0x07, 0xD0, 0x7E, 0xD5, 0xB3, 0x70 };  //(lsb)
+static const u1_t PROGMEM DEVEUI[8] = { FILLMEIN };  //(lsb)
 
 void os_getDevEui(u1_t *buf) {
   memcpy_P(buf, DEVEUI, 8);
@@ -97,7 +97,7 @@ void os_getDevEui(u1_t *buf) {
 // This key should be in big endian format (or, since it is not really a
 // number but a block of memory, endianness does not really apply). In
 // practice, a key taken from ttnctl can be copied as-is.
-static const u1_t PROGMEM APPKEY[16] = { 0xEC, 0x6D, 0x81, 0x17, 0xD0, 0xAF, 0xCB, 0xF4, 0xFA, 0x08, 0x41, 0xB1, 0x15, 0x2C, 0xC5, 0x48 };  //(msb)
+static const u1_t PROGMEM APPKEY[16] = { FILLMEIN };  //(msb)
 
 void os_getDevKey(u1_t *buf) {
   memcpy_P(buf, APPKEY, 16);
@@ -802,82 +802,3 @@ static inline void rebootNow(const char *reason) {
   delay(100);
   esp_restart();
 }
-
-
-
-
-/*######################################
-//TTN Payload formatter
-//######################################
-
-function decodeUplink(input) {
-    var bytes = input.bytes;
-    
-    // Hilfsfunktion für 16-Bit signed
-    function decodeSigned16Bit(byte1, byte2) {
-        var value = (byte1 << 8) | byte2;
-        if (value >= 0x8000) value -= 0x10000;
-        return value;
-    }
-    
-    // Hilfsfunktion für 16-Bit unsigned
-    function decodeUnsigned16Bit(byte1, byte2) {
-        return (byte1 << 8) | byte2;
-    }
-    
-    
-    // Helper: decode unsigned 32-bit integer
-    function decodeUnsigned32(bytes, index) {
-        return (bytes[index] << 24) | (bytes[index + 1] << 16) | (bytes[index + 2] << 8) | bytes[index + 3];
-    }
-    
-    // Hilfsfunktion für Werte mit Komma (z.B. Temperature)
-    function moveComma(input) {
-        return input / 100;
-    }
-
-    // ------------- Analoge Sensorwerte ------------- //
-    var sensorValues = [];
-    for (var i = 0; i < 8; i++) {
-        // Je Sensor zwei Pins → 2 Bytes pro Pin → 4 Bytes pro Sensor
-        var offset = i * 4;
-        var pin2 = decodeUnsigned16Bit(bytes[offset], bytes[offset + 1]);
-        var pin3 = decodeUnsigned16Bit(bytes[offset + 2], bytes[offset + 3]);
-        sensorValues.push({pin2: pin2, pin3: pin3});
-    }
-
-    // ------------- BME280 ------------- //
-    var sensTemperature = moveComma(decodeSigned16Bit(bytes[32], bytes[33]));       // °C
-    var sensPressure = decodeUnsigned16Bit(bytes[34], bytes[35]);                   // hPa*100
-    var sensHumidity = moveComma(decodeUnsigned16Bit(bytes[36], bytes[37]));        // %*100
-
-    // ------------- BootCycle und Batterie ------------- //
-    var bootCycle = decodeUnsigned32(bytes, 38);                                    // 32-bit unsigned
-    var cellLvlPercent = decodeUnsigned16Bit(bytes[42], bytes[43]);
-    var batteryRAW = decodeUnsigned16Bit(bytes[44], bytes[45]);
-
-    // Ergebnisobjekt
-    var decoded = {
-        sensor0: sensorValues[0],
-        sensor1: sensorValues[1],
-        sensor2: sensorValues[2],
-        sensor3: sensorValues[3],
-        sensor4: sensorValues[4],
-        sensor5: sensorValues[5],
-        sensor6: sensorValues[6],
-        sensor7: sensorValues[7],
-        sensTemperature: sensTemperature,
-        sensPressure: sensPressure / 100.0, // optional in hPa
-        sensHumidity: sensHumidity,
-        bootCycle: bootCycle,
-        cellLvlPercent: cellLvlPercent,
-        batteryRAW: batteryRAW
-    };
-    
-    return {
-        data: decoded,
-        warnings: [],
-        errors: []
-    };
-}
-*/
