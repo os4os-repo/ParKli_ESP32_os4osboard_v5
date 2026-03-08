@@ -27,7 +27,7 @@ https://parkli.de/
 ## TTN Payload decoder
 Use the TTN JavaScript decoder in [TTN_Decoder/decoder.txt](TTN_Decoder/decoder.txt). It maps raw bytes to:
 - sensor0 to sensor7 (each with pin2 and pin3 values for analog sensors)
-- sensTemperature (Air_Temperature, scaled by 1/100 in °C)
+- sensTemperature (Air_Temperature, in °C with two decimal places)
 - sensPressure (Pressure in hPa)
 - sensHumidity (Humidity, scaled by 1/100 in %)
 - bootCycle (boot counter)
