@@ -1,0 +1,68 @@
+function decodeUplink(input) {
+  var b = input.bytes;
+  var errors = [];
+ 
+  if (b.length !== 18) {
+    return {
+      data: { raw_length: b.length },
+      errors: ["Unexpected payload length: " + b.length + " (expected 18)"]
+    };
+  }
+ 
+  // Helpers
+  function u16(i) { return (b[i] << 8) | b[i + 1]; }
+  function i16(i) {
+    var v = (b[i] << 8) | b[i + 1];
+    return (v & 0x8000) ? v - 0x10000 : v;
+  }
+  function u32(i) {
+    // Use multiplication to avoid 32-bit signed overflow in JS bitwise ops
+    return (b[i] * 0x1000000) + (b[i + 1] << 16) + (b[i + 2] << 8) + b[i + 3];
+  }
+ 
+  var bmeTempRaw  = i16(0);
+  var bmePressRaw = u16(2);
+  var bmeHumRaw   = u16(4);
+  var shtTempRaw  = i16(6);
+  var shtHumRaw   = u16(8);
+  var bootCount   = u32(10);
+  var cellPct     = u16(14);
+  var battRaw     = u16(16);
+ 
+  var data = {
+    bme280: {
+      temperature_c: bmeTempRaw / 100,    // °C
+      pressure_hpa:  bmePressRaw / 10,    // hPa  (raw is Pa/10, so /10 -> hPa)
+      humidity_pct:  bmeHumRaw / 100      // %
+    },
+    sht31: {
+      temperature_c: shtTempRaw / 100,    // °C
+      humidity_pct:  shtHumRaw / 100      // %
+    },
+    boot_count: bootCount,
+    battery: {
+      level_pct: cellPct,                 // 0..100
+      adc_raw:   battRaw                  // raw ADC, useful for diagnostics
+    }
+  };
+ 
+  // Sensor-init-failure sentinel: firmware sends all zeros for that sensor.
+  // Flag it so dashboards can ignore the reading.
+  if (bmeTempRaw === 0 && bmePressRaw === 0 && bmeHumRaw === 0) {
+    data.bme280.valid = false;
+    errors.push("BME280 reading is all zeros (sensor init may have failed)");
+  } else {
+    data.bme280.valid = true;
+  }
+ 
+  if (shtTempRaw === 0 && shtHumRaw === 0) {
+    data.sht31.valid = false;
+    errors.push("SHT31 reading is all zeros (sensor init may have failed)");
+  } else {
+    data.sht31.valid = true;
+  }
+ 
+  var result = { data: data };
+  if (errors.length) result.warnings = errors;
+  return result;
+}

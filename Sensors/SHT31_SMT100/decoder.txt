@@ -1,0 +1,85 @@
+// =============================================================================
+// TTN Payload Decoder for main_BME_SHT31_SMT100_3.ino
+// =============================================================================
+//
+// Paste into TTN console:
+//   End device -> Payload formatters -> Uplink ->
+//     Formatter type: "Custom JavaScript formatter"
+//
+// Fixed 22-byte payload, big-endian:
+//
+//   offset  size  field
+//   ------  ----  ---------------------------------------
+//        0     2  BME280 temperature  (i16, °C × 100)
+//        2     2  BME280 pressure     (u16, Pa / 10)        -> divide by 10 for hPa
+//        4     2  BME280 humidity     (u16, % × 100)
+//        6     2  SHT31  temperature  (i16, °C × 100)
+//        8     2  SHT31  humidity     (u16, % × 100)
+//       10     2  SMT100 temperature  (i16, °C × 100)
+//       12     2  SMT100 water content (u16, % × 100)
+//       14     4  bootCount           (u32)
+//       18     2  CellLvlPercent      (u16, 0..100)
+//       20     2  batterylvl raw ADC  (u16)
+//   total: 22 bytes
+//
+// On sensor init failure the firmware packs zeros for that block so the layout
+// stays fixed -- a value of exactly 0.00 may therefore mean "sensor was not
+// found at boot" rather than a real zero reading.
+// =============================================================================
+
+function readU16(b, o) { return (b[o] << 8) | b[o + 1]; }
+function readI16(b, o) {
+  var v = (b[o] << 8) | b[o + 1];
+  if (v & 0x8000) v -= 0x10000;
+  return v;
+}
+function readU32(b, o) {
+  // Avoid `<< 24` which produces a signed result in JS
+  return (b[o] * 16777216) + (b[o + 1] << 16) + (b[o + 2] << 8) + b[o + 3];
+}
+
+function decodeUplink(input) {
+  var b = input.bytes;
+  var warnings = [];
+  var errors = [];
+
+  if (b.length !== 22) {
+    errors.push("expected 22 bytes, got " + b.length);
+    return { data: {}, warnings: warnings, errors: errors };
+  }
+
+  var data = {
+    bme280: {
+      temperature_c: readI16(b,  0) / 100,
+      pressure_hpa:  readU16(b,  2) / 10,
+      humidity_pct:  readU16(b,  4) / 100,
+    },
+    sht31: {
+      temperature_c: readI16(b,  6) / 100,
+      humidity_pct:  readU16(b,  8) / 100,
+    },
+    smt100: {
+      temperature_c:     readI16(b, 10) / 100,
+      water_content_pct: readU16(b, 12) / 100,
+    },
+    bootCount:       readU32(b, 14),
+    cellLvlPercent:  readU16(b, 18),
+    batterylvlRaw:   readU16(b, 20),
+  };
+
+  // Hint at common "missing sensor" cases -- firmware packs all-zeros for a
+  // sensor block when its init failed at boot.
+  if (data.bme280.temperature_c === 0 &&
+      data.bme280.pressure_hpa  === 0 &&
+      data.bme280.humidity_pct  === 0) {
+    warnings.push("BME280 block is all zeros -- sensor possibly not initialized");
+  }
+  if (data.sht31.temperature_c === 0 && data.sht31.humidity_pct === 0) {
+    warnings.push("SHT31 block is all zeros -- sensor possibly not initialized");
+  }
+  if (data.smt100.temperature_c === 0 && data.smt100.water_content_pct === 0) {
+    warnings.push("SMT100 block is all zeros -- sensor timed out or not connected");
+  }
+
+  return { data: data, warnings: warnings, errors: errors };
+}
