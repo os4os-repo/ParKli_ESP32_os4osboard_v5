@@ -293,27 +293,9 @@ void readAndPackBME280(Adafruit_BME280 &bme, uint8_t *buffer, size_t *payloadLen
     return;
   }
 
-  // Configure for forced (one-shot) mode with x1 oversampling and no IIR filter.
-  // Forced mode avoids the continuous self-heating that drifts the temperature
-  // (and therefore humidity) reading upward in NORMAL mode.
-  bme.setSampling(Adafruit_BME280::MODE_FORCED,
-                  Adafruit_BME280::SAMPLING_X1,   // temperature
-                  Adafruit_BME280::SAMPLING_X1,   // pressure
-                  Adafruit_BME280::SAMPLING_X1,   // humidity
-                  Adafruit_BME280::FILTER_OFF);
-
-  // Let the humidity element thermally equilibrate with ambient air.
-  // The polymer humidity sensor needs longer than the 300 ms power-on settle.
-  delay(2000);
-
-  // Take one forced measurement and discard it
-  bme.takeForcedMeasurement();
-  delay(100);
-  (void)bme.readHumidity();
-
-  // Take the real measurement
-  bme.takeForcedMeasurement();
-  delay(100);
+  // Throw away first measurement after power-up	 
+  (void)bme.readTemperature();				  						  
+  delay(10);
 
   int16_t sensTemperature = int16_t(bme.readTemperature() * 100.0F);
   uint32_t rawPressure = bme.readPressure();           // Pa
