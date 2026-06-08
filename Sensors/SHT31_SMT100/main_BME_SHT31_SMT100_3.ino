@@ -112,15 +112,15 @@ RTC_DATA_ATTR struct {
 #endif
 
 // LSB
-static const u1_t PROGMEM APPEUI[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+static const u1_t PROGMEM APPEUI[8] = { FILLMEIN };
 void os_getArtEui(u1_t *buf) { memcpy_P(buf, APPEUI, 8); }
 
 // LSB
-static const u1_t PROGMEM DEVEUI[8] = { 0x0E, 0x7C, 0x07, 0xD0, 0x7E, 0xD5, 0xB3, 0x70 };
+static const u1_t PROGMEM DEVEUI[8] = { FILLMEIN };
 void os_getDevEui(u1_t *buf) { memcpy_P(buf, DEVEUI, 8); }
 
 // MSB
-static const u1_t PROGMEM APPKEY[16] = { 0xDB, 0xB3, 0x84, 0xDE, 0x6C, 0xF8, 0xAD, 0xA7, 0x42, 0x58, 0xED, 0xE4, 0x80, 0x14, 0xD9, 0x0B };
+static const u1_t PROGMEM APPKEY[16] = { FILLMEIN };
 void os_getDevKey(u1_t *buf) { memcpy_P(buf, APPKEY, 16); }
 
 static osjob_t sendjob;
